@@ -1,0 +1,3 @@
+[submodule "third-party/cpuminer-multi"]
+	path = third-party/cpuminer-multi
+	url = https://github.com/clemos/cpuminer-multi.git
