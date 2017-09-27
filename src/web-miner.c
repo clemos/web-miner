@@ -70,33 +70,39 @@ void work_set_target_ratio(struct work* work, uint32_t* hash)
 extern "C" {
 #endif
 
-int EMSCRIPTEN_KEEPALIVE test( uint32_t* data, uint32_t* target, uint32_t max_nonce, char* job_id) {
+int EMSCRIPTEN_KEEPALIVE cryptonight_work( 
+  uint32_t* data, 
+  uint32_t* target, 
+  uint32_t max_nonce, 
+  uint64_t* hashes_done,  
+  uchar* hash,
+  char* job_id) {
   // FIXME
   work_restart = (struct work_restart*) calloc(opt_n_threads, sizeof(*work_restart));
   
   struct work work;
 
-  // extract current nonce
-  uint32_t *nonceptr = (uint32_t*) (((char*)data) + 39);
-
-  // clear current work
-  memset(&work, 0, sizeof(work));
- 
   // copy input blob to current work blob
-  memcpy(work.data, data, sizeof(work.data));
+  memcpy(work.data, data, 76);
   
   // clear target
-  memset(work.target, 0xff, sizeof(work.target));
+  memset(work.target, 0xff, 8);
   // set target
   work.target[7] = *target;
   
   // run scan 
-  uint64_t hashes_done = 0;
+  *hashes_done = 0;
   int rc = 0;
-  rc = scanhash_cryptonight(0, &work, max_nonce, &hashes_done);
+  rc = scanhash_cryptonight(0, &work, max_nonce, hashes_done);
+  //EM_ASM({console.log("(c) hashes done after",$0)}, *hashes_done);
+
+  if(rc) {
+    // if success, calculate current hash
+    cryptonight_hash(hash, work.data, 76);
+  }
 
   // copy memory back 
-  memcpy(data, work.data, sizeof(work.data));
+  memcpy(data, work.data, 76);
 
   return rc;
 }

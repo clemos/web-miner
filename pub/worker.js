@@ -3,12 +3,17 @@ importScripts('web-miner.js');
 const BLOB_LENGTH = 76;
 const TARGET_LENGTH = 4;
 const NONCE_OFFSET = 39;
-const N_HASHES = 500; // make 100 hashes per round
+const N_HASHES = 10; // make 100 hashes per round
+const HASH_LENGTH = 32;
 
 const ptr = {
   blob: 0,
-  target: 0
+  target: 0,
+  hashes_done: 0,
+  hash: 0
 }
+
+var working = false;
 
 function hexToUint8Array(str){
   var a = [];
@@ -21,19 +26,25 @@ function hexToUint8Array(str){
 function prepare(){
   ptr.blob = ptr.blob || Module._malloc(BLOB_LENGTH);
   ptr.target = ptr.target || Module._malloc(BLOB_LENGTH);
+  ptr.hashes_done = ptr.hashes_done || Module._malloc(16);
+  ptr.hash = ptr.hash || Module._malloc(HASH_LENGTH);
 }
 
 function extractNonce(){
-  console.log('blob is', Module.HEAPU8.slice(ptr.blob, ptr.blob + BLOB_LENGTH));
-  var nonceData = Module.HEAPU8.slice(ptr.blob+39, ptr.blob+39+4);
-  console.log('nonce data',nonceData);
+  var nonceData = Module.HEAPU8.slice(ptr.blob+NONCE_OFFSET, ptr.blob+NONCE_OFFSET+4);
   var nonce = new Uint32Array(nonceData.buffer);
-  console.log('nonce is', nonce);
-
   return nonce[0];
 }
 
-var working = false;
+function extractHash(){
+  var hashData = Module.HEAPU8.slice(ptr.hash, ptr.hash+HASH_LENGTH);
+  return hashData;
+}
+
+function extractHashesDone(){
+  var v = Module.getValue(ptr.hashes_done,"i64");//Module.HEAPU8.slice(ptr.hashes_done, ptr.hashes_done+8);
+  return v;
+}
 
 function work() {
   //extractNonce();
@@ -46,15 +57,22 @@ function work() {
   console.log('max_hash is', max_hash );
 
   var t0 = performance.now();
-  var found = Module._test(ptr.blob, ptr.target, max_hash);
+  var found = Module._cryptonight_work(ptr.blob, ptr.target, max_hash, ptr.hashes_done, ptr.hash);
   var t1 = performance.now();
   var delta = (t1-t0);
   
   console.log('found:',found);
-  console.log('hashrate', (1000*N_HASHES/delta) );
+  var hashes_done = extractHashesDone();
+  console.log('hashes done', hashes_done);
+  console.log('hashrate', (1000*hashes_done/delta) );
+
+  if( found ) {
+    console.log("*** FOUND ***");
+    console.log('hash:', extractHash());
+  }
 
   if( working && !found ){
-    setTimeout(work, 1);
+    setTimeout(work,0);
   }
 
 }
@@ -62,7 +80,7 @@ function work() {
 function doJob(job){
   prepare();
 
-  console.log('decoding blob',job);
+  //console.log('decoding blob',job);
   var blob = hexToUint8Array(job.blob);
   var target = hexToUint8Array(job.target);
   

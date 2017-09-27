@@ -28,6 +28,7 @@ function handleError(emitter) {
 }
 
 function sendJob(client, job) {
+  console.log('sending job', job);
   client.send(JSON.stringify({
     method:"job",
     params: job
@@ -49,6 +50,21 @@ pool.on('job', (job)=>{
 pool.connect();
 
 wsServer.on('connection', (client)=>{
+  client.on('message', (message)=>{
+    try {
+      var json = JSON.parse(message);
+      switch(json.method) {
+        case "submit":
+          console.log('submitting work',json.params);
+          pool.submit(json.params).then((res)=>{
+            console.log('done submitting work',res);
+          });
+          break;
+      }
+    }catch(e){
+      console.error('invalid message from client',message);
+    }
+  });
   var job;
   if(job = pool.getJob()) {
     sendJob(client, job);  
