@@ -7,7 +7,14 @@ class Api {
       console.log('got message', e);
       try {
         var json = JSON.parse(e.data);
-        onJob(json);
+        switch(json.method) {
+          case 'job': 
+            onJob(json.params);
+            break;
+          default:
+            console.log('unknown message',e.data);
+            break;
+        }
       }catch(e){
         console.error('invalid message',e);
       }

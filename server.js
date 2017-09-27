@@ -27,6 +27,13 @@ function handleError(emitter) {
   })
 }
 
+function sendJob(client, job) {
+  client.send(JSON.stringify({
+    method:"job",
+    params: job
+  }))
+}
+
 const wsServer = new ws.Server({port: config.ws.port});
 
 const pool = new MoneroPool( config.monero );
@@ -34,37 +41,18 @@ pool.on('job', (job)=>{
   console.log('broadcasting job', job);
   wsServer.clients.forEach((client)=>{
     if (client.readyState === ws.OPEN) {
-      client.send(JSON.stringify(job));
+      sendJob(client, job);
     }
   });
 });
 
-const httpServer = http.createServer((req,res)=>{
-  // cors
-  if( req.headers['origin'] ) {
-    res.setHeader('Access-Control-Allow-Origin', req.headers['origin']);
-  }
-
-  const parts = req.url.split("/").slice(1);
-  switch(parts[0]) {
-    case 'monero':
-      res.end(JSON.stringify(pool.getJob()));
-      break;
-    default:
-      res.status = 400;
-      res.end('Bad Request');
-  }
-
-});
-
 pool.connect();
-httpServer.listen(config.http.port, ()=>{
-  console.log(`listening on ${config.port}`);
-});
 
-// fixme : doesn't necessarily have a job here
-wsServer.on('connection', (socket)=>{
-  socket.send( JSON.stringify(pool.getJob()) );
+wsServer.on('connection', (client)=>{
+  var job;
+  if(job = pool.getJob()) {
+    sendJob(client, job);  
+  }
 }); 
 
 

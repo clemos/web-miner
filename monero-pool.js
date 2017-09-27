@@ -37,7 +37,7 @@ class MoneroPool extends EventEmitter {
     if(data.method) {
       switch(data.method) {
         case 'job': 
-          onJob(data.params);
+          this.onJob(data.params);
           break;
         default:
           console.error('Unknown command', data);

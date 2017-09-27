@@ -3,7 +3,7 @@ importScripts('web-miner.js');
 const BLOB_LENGTH = 76;
 const TARGET_LENGTH = 4;
 const NONCE_OFFSET = 39;
-const N_HASHES = 100; // make 100 hashes per round
+const N_HASHES = 500; // make 100 hashes per round
 
 const ptr = {
   blob: 0,
