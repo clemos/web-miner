@@ -5,10 +5,11 @@
 #include "miner.h"
 
 bool aes_ni_supported = true;
-struct work_restart *work_restart = NULL;
+struct work_restart *work_restart = NULL; 
 int opt_n_threads = 1;
-
 struct work work = {{0}};
+uint64_t hashes_done = 0;
+uint32_t* nonceptr = (uint32_t*) (((char*)work.data) + 39);
 
 char *abin2hex(const unsigned char *p, size_t len)
 {
@@ -72,31 +73,28 @@ void work_set_target_ratio(struct work* work, uint32_t* hash)
 extern "C" {
 #endif
 
+uint32_t* EMSCRIPTEN_KEEPALIVE blob_ptr() {
+  return work.data;
+}
+
+uint32_t* EMSCRIPTEN_KEEPALIVE target_ptr() {
+  return work.target;
+}
+
 int EMSCRIPTEN_KEEPALIVE cryptonight_work( 
-  uint32_t* data, 
-  uint32_t* target, 
-  uint32_t max_nonce, 
+  uint32_t max_hashes, 
   uint64_t* hashes_done,  
   uchar* hash,
   char* job_id) {
-  // FIXME
+
   work_restart = (struct work_restart*) calloc(opt_n_threads, sizeof(*work_restart));
   
-  // copy input blob to current work blob
-  memcpy(work.data, data, 76);
-  
-  // clear target
-  memset(work.target, 0xff, 8);
-  // set target
-  work.target[7] = *target;
-  
-  // run scan 
+  uint32_t max_nonce = *nonceptr + max_hashes;
+
+   // run scan 
   *hashes_done = 0;
   int rc = 0;
   rc = scanhash_cryptonight(0, &work, max_nonce, hashes_done);
-
-  // copy memory back 
-  memcpy(data, work.data, 76);
 
   return rc;
 }
