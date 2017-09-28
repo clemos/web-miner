@@ -23,6 +23,14 @@ function hexToUint8Array(str){
   return new Uint8Array(a);
 }
 
+function uint8ArrayToHex(a){
+  var s = "";
+  for( var i=0; i<a.length; i+= 2 ) {
+    s += ""+(a[i]).toString(16);
+  }
+  return s;
+}
+
 function prepare(){
   ptr.blob = ptr.blob || Module._malloc(BLOB_LENGTH);
   ptr.target = ptr.target || Module._malloc(BLOB_LENGTH);
@@ -57,7 +65,7 @@ function work() {
   console.log('max_hash is', max_hash );
 
   var t0 = performance.now();
-  var found = Module._cryptonight_work(ptr.blob, ptr.target, max_hash, ptr.hashes_done, ptr.hash);
+  var found = Module._cryptonight_work(ptr.blob, ptr.target, max_hash, ptr.hashes_done);
   var t1 = performance.now();
   var delta = (t1-t0);
   
@@ -68,7 +76,13 @@ function work() {
 
   if( found ) {
     console.log("*** FOUND ***");
-    console.log('hash:', extractHash());
+    console.log("extracting hash");
+    console.log('hash before:', extractHash());
+    Module._cryptonight_update_hash(ptr.hash);
+
+    var hash = extractHash();
+    console.log('hash:', hash);
+    console.log('hash (hex):', uint8ArrayToHex(hash));
   }
 
   if( working && !found ){
@@ -109,9 +123,9 @@ function doJob(job){
 var TEST_JOB = '{"blob":"0606a598a9ce05f643ea17ace14b4f3d4a82e6e07f11951043cfb82eb389eb436d28f8368f30a4261e000099502e45a7f50a4fa49f6d860517a15560debfd247abc76a8c799a7b918fb54e0a","job_id":"241163350990973","target":"169f0200"}';
 
 onmessage = function(e){  
-  // e = {
-  //   data : TEST_JOB
-  // };
+  e = {
+    data : TEST_JOB
+  };
   console.log('got message',e);
   var job = JSON.parse(e.data);
   function next(){

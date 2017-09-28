@@ -8,6 +8,8 @@ bool aes_ni_supported = true;
 struct work_restart *work_restart = NULL;
 int opt_n_threads = 1;
 
+struct work work = {{0}};
+
 char *abin2hex(const unsigned char *p, size_t len)
 {
   char *s = (char*) malloc((len * 2) + 1);
@@ -80,8 +82,6 @@ int EMSCRIPTEN_KEEPALIVE cryptonight_work(
   // FIXME
   work_restart = (struct work_restart*) calloc(opt_n_threads, sizeof(*work_restart));
   
-  struct work work;
-
   // copy input blob to current work blob
   memcpy(work.data, data, 76);
   
@@ -94,17 +94,17 @@ int EMSCRIPTEN_KEEPALIVE cryptonight_work(
   *hashes_done = 0;
   int rc = 0;
   rc = scanhash_cryptonight(0, &work, max_nonce, hashes_done);
-  //EM_ASM({console.log("(c) hashes done after",$0)}, *hashes_done);
-
-  if(rc) {
-    // if success, calculate current hash
-    cryptonight_hash(hash, work.data, 76);
-  }
 
   // copy memory back 
   memcpy(data, work.data, 76);
 
   return rc;
+}
+
+int EMSCRIPTEN_KEEPALIVE cryptonight_update_hash( uchar* hash ) {
+  cryptonight_hash(hash, work.data, 76);
+
+  return 1;
 }
 
 #ifdef __cplusplus
