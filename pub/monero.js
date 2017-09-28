@@ -1,20 +1,13 @@
 
 class Api {
   
-  constructor( host, port, onJob ) {
+  constructor( host, port, onJson ) {
     var ws = new WebSocket(`ws://${host}:${port}/monero`);
     ws.onmessage = function(e){
       console.log('got message', e);
       try {
         var json = JSON.parse(e.data);
-        switch(json.method) {
-          case 'job': 
-            onJob(json.params);
-            break;
-          default:
-            console.log('unknown message',e.data);
-            break;
-        }
+        onJson(json);
       }catch(e){
         console.error('invalid message',e);
       }
@@ -34,11 +27,15 @@ worker.onmessage = function(e){
   console.log('got message from worker', e);
 }
 
-const api = new Api('localhost', 8089, (job)=>{
-  var msg = JSON.stringify(job);
-  console.log('posting', msg);
-  worker.postMessage(msg);
-
+const api = new Api('localhost', 8089, (json)=>{
+  switch(json.method) {
+    case 'job': 
+      worker.postMessage(json);
+      break;
+    default:
+      console.log('unknown message',json);
+      break;
+  }
   //console.log('blob length', blob.byteLength);
 
 

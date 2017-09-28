@@ -89,16 +89,19 @@ function work() {
   }
 }
 
-function doJob(job){
+function onJob(job){
   prepare();
 
-  //console.log('decoding blob',job);
-  blob.set(hexToUint8Array(job.blob));
-
-  var targetData = hexToUint8Array(job.target);
-  console.log('target length', targetData);
+  var newJob = {
+    blob: hexToUint8Array(job.blob),
+    target: hexToUint8Array(job.target),
+    job_id: job.job_id
+  };
+  
+  blob.set(newJob.blob);
+  
   target.fill(0);
-  target.set(targetData, 7*4);
+  target.set(newJob.target, 7*4);
 
   console.log('blob is now', blob);
   
@@ -128,10 +131,14 @@ onmessage = function(e){
   //   data : TEST_JOB
   // };
   console.log('got message',e);
-  var job = JSON.parse(e.data);
-  function next(){
-    doJob(job);
+  
+  var next = ()=>console.log('nothing to do');
+  
+  switch(e.data.method){
+    case "job": 
+      next = ()=>onJob(e.data.params);
   }
+
   try{
     next();
   }catch(e){
@@ -140,4 +147,3 @@ onmessage = function(e){
   }
   
 };
-postMessage('hello !!');
