@@ -2,8 +2,8 @@
 class Api {
   
   constructor( host, port, onJson ) {
-    var ws = new WebSocket(`ws://${host}:${port}/monero`);
-    ws.onmessage = function(e){
+    this.ws = new WebSocket(`ws://${host}:${port}/monero`);
+    this.ws.onmessage = function(e){
       console.log('got message', e);
       try {
         var json = JSON.parse(e.data);
@@ -12,6 +12,13 @@ class Api {
         console.error('invalid message',e);
       }
     }
+  }
+
+  submit( work ) {
+    this.ws.send(JSON.stringify({
+      method: "submit",
+      params: work
+    }));
   }
 
   // monero() {
@@ -23,9 +30,6 @@ class Api {
 }
 
 var worker = new Worker('worker.js');
-worker.onmessage = function(e){
-  console.log('got message from worker', e);
-}
 
 const api = new Api('localhost', 8089, (json)=>{
   switch(json.method) {
@@ -37,9 +41,18 @@ const api = new Api('localhost', 8089, (json)=>{
       break;
   }
   //console.log('blob length', blob.byteLength);
-
-
 });
+
+worker.onmessage = function(e){
+  console.log('got message from worker', e);
+  switch(e.data.method) {
+    case "submit": 
+      console.log('submitting work',e.data.params);
+      api.submit(e.data.params);
+      break;
+  }
+}
+
 // api.monero()
 //  .then(function(res){
 //   console.log('got response', res);

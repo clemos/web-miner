@@ -13,7 +13,8 @@ const ptr = {
   hash: 0
 }
 
-var blob, target, nonce;
+var nonce;
+var currentJob = {};
 
 var working = false;
 
@@ -27,16 +28,30 @@ function hexToUint8Array(str){
 
 function uint8ArrayToHex(a){
   var s = "";
-  for( var i=0; i<a.length; i+= 2 ) {
-    s += ""+(a[i]).toString(16);
+  for( var i=0; i<a.length; i++ ) {
+    var ch = (a[i]).toString(16);
+    while(ch.length<2) ch = '0'+ch;
+    s += ch;
+  }
+  return s;
+}
+
+function dataViewToHex(dv) {
+  var s = "";
+  for( var i=0; i<dv.byteLength; i++ ) {
+    var ch = dv.getUint8(i).toString(16);
+    while(ch.length<2) ch = '0'+ch;
+    s += ch;
   }
   return s;
 }
 
 function prepare(){
-  blob = blob || new Uint8Array(Module.HEAPU8.buffer, Module._blob_ptr(), BLOB_LENGTH);
-  target = target || new Uint8Array(Module.HEAPU8.buffer, Module._target_ptr(), TARGET_LENGTH);
-  nonce = new DataView(blob.buffer, blob.byteOffset+39, 8);
+  currentJob.blob = currentJob.blob || new Uint8Array(Module.HEAPU8.buffer, Module._blob_ptr(), BLOB_LENGTH);
+  currentJob.target = currentJob.target || new Uint8Array(Module.HEAPU8.buffer, Module._target_ptr(), TARGET_LENGTH);
+  
+  // FIXME: optim
+  nonce = new DataView(currentJob.blob.buffer, currentJob.blob.byteOffset+39, 4);
   
   ptr.hashes_done = ptr.hashes_done || Module._malloc(8);
   ptr.hash = ptr.hash || Module._malloc(HASH_LENGTH);
@@ -74,39 +89,48 @@ function work() {
   console.log('hashrate', (1000*hashes_done/delta) );
   
   if( found ) {
-    console.log("*** FOUND ***");
-    console.log("extracting hash");
-    console.log('hash before:', extractHash());
-    Module._cryptonight_update_hash(ptr.hash);
-
-    var hash = extractHash();
-    console.log('hash:', hash);
-    console.log('hash (hex):', uint8ArrayToHex(hash));
+    submitWork();
   }
+
 
   if( working && !found ){
     setTimeout(work,0);
   }
 }
 
+function submitWork() {
+  console.log("*** FOUND ***");
+  console.log('nonce is', nonce.getUint32());
+  console.log("extracting hash");
+    
+  Module._cryptonight_update_hash(ptr.hash);
+  var hash = extractHash();
+
+  var params = {
+    job_id: currentJob.job_id,
+    nonce: dataViewToHex(nonce),
+    result: uint8ArrayToHex(hash)
+  };
+
+  postMessage({
+    method: "submit",
+    params: params
+  });
+}
+
 function onJob(job){
+  console.log('on job',job);
   prepare();
 
-  var newJob = {
-    blob: hexToUint8Array(job.blob),
-    target: hexToUint8Array(job.target),
-    job_id: job.job_id
-  };
-  
-  blob.set(newJob.blob);
-  
-  target.fill(0);
-  target.set(newJob.target, 7*4);
+  currentJob.job_id = job.job_id;
+  currentJob.blob.set( hexToUint8Array(job.blob) );
+  currentJob.target.fill(0);
+  currentJob.target.set(hexToUint8Array(job.target), 7*4);
 
-  console.log('blob is now', blob);
+  console.log('blob is now', currentJob.blob);
   
-  console.assert(blob.byteLength == BLOB_LENGTH);
-  console.assert(target.byteLength == TARGET_LENGTH);
+  console.assert(currentJob.blob.byteLength == BLOB_LENGTH);
+  console.assert(currentJob.target.byteLength == TARGET_LENGTH);
 
   working = true;
   work();
@@ -128,7 +152,10 @@ var TEST_JOB = '{"blob":"0606a598a9ce05f643ea17ace14b4f3d4a82e6e07f11951043cfb82
 
 onmessage = function(e){  
   // e = {
-  //   data : TEST_JOB
+  //   data : {
+  //     method:"job",
+  //     params:JSON.parse(TEST_JOB)
+  //   }
   // };
   console.log('got message',e);
   

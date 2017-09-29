@@ -54,7 +54,7 @@ wsServer.on('connection', (client)=>{
     try {
       var json = JSON.parse(message);
       switch(json.method) {
-        case "submit":
+        case 'submit':
           console.log('submitting work',json.params);
           pool.submit(json.params).then((res)=>{
             console.log('done submitting work',res);
@@ -62,7 +62,7 @@ wsServer.on('connection', (client)=>{
           break;
       }
     }catch(e){
-      console.error('invalid message from client',message);
+      console.error('invalid message from client',message,e);
     }
   });
   var job;

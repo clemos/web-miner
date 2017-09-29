@@ -34,6 +34,7 @@ class MoneroPool extends EventEmitter {
   }
 
   onJson(data) {
+    console.log('JSON =>',data);
     if(data.method) {
       switch(data.method) {
         case 'job': 
@@ -60,8 +61,6 @@ class MoneroPool extends EventEmitter {
         "method": method,
         "params": params
       };
-
-      console.log('logging in', req);
 
       // register listener
       var onJson;
@@ -94,6 +93,8 @@ class MoneroPool extends EventEmitter {
         "agent": "cpuminer"
       })
       .then((res)=>{
+        console.log('got login response',res);
+        this.clientId = res.id;
         if( res.job ) {
           this.onJob(res.job);
         }
@@ -107,6 +108,22 @@ class MoneroPool extends EventEmitter {
 
   getJob(){
     return this.currentJob;
+  }
+
+  submit(work){
+    console.log('** submitting', work);
+    return this.request('submit', {
+      id: this.clientId,
+      job_id: work.job_id,
+      nonce: work.nonce,
+      result: work.result
+    })
+    .then((res)=>{
+      console.log('got submit response',res);
+    })
+    .catch((res)=>{
+      console.log('got submit error',res);
+    });
   }
 
   connect(cb){
