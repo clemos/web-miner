@@ -129,6 +129,8 @@ class MoneroPool extends EventEmitter {
     })
     .catch((res)=>{
       console.log('got submit error',res);
+      // FIXME: sometimes returns { error: { code: -1, message: 'Unauthenticated' } } }
+      // in which case a reconnection is probably necessary (?)
     });
   }
 
