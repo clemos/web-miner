@@ -18,6 +18,12 @@ class MoneroPool extends EventEmitter {
     client.on('data', (data)=>this.onData(data));
     client.on('json', (json)=>this.onJson(json));
     client.on('close', ()=>this.onClose());
+    client.on('timeout', ()=>{
+      console.log('socket timed out');
+    });
+    client.on('end', ()=>{
+      console.log('socket ended');
+    });
   }
    
   getRequestId() {
@@ -126,7 +132,7 @@ class MoneroPool extends EventEmitter {
     });
   }
 
-  connect(cb){
+  connect(cb) {
     console.log('connecting to pool', this.config.pool);
     return this.client.connect(this.config.pool.port, this.config.pool.host, ()=>{
       // FIXME: should be able to reconnect

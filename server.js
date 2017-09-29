@@ -17,7 +17,8 @@ const config = {
       port: 3333
     },
     // WALLET FROM CPUMINER DEV ;)
-    wallet: '472haywQKoxFzf7asaQ4XKBc2foAY4ezk8HiN63ifW4iAbJiLnfmJfhHSR9XmVKw2WYPnszJV9MEHj9Z5WMK9VCNHaGLDmJ'
+    //wallet: '472haywQKoxFzf7asaQ4XKBc2foAY4ezk8HiN63ifW4iAbJiLnfmJfhHSR9XmVKw2WYPnszJV9MEHj9Z5WMK9VCNHaGLDmJ'
+    wallet:'44pSi62rfqMd6Wc8atWs4oBfbTmQXjFxzg16GMqrXwwy5yaKqAfEvew1wZspP5vbDW1dVafopfxjmcjjHxqh6mheU15mJ9o'
   }
 }
 
