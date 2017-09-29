@@ -28,7 +28,6 @@ function handleError(emitter) {
 }
 
 function sendJob(client, job) {
-  console.log('sending job', job);
   client.send(JSON.stringify({
     method:"job",
     params: job
@@ -39,7 +38,6 @@ const wsServer = new ws.Server({port: config.ws.port});
 
 const pool = new MoneroPool( config.monero );
 pool.on('job', (job)=>{
-  console.log('broadcasting job', job);
   wsServer.clients.forEach((client)=>{
     if (client.readyState === ws.OPEN) {
       sendJob(client, job);

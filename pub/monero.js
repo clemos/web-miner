@@ -29,7 +29,7 @@ class Api {
   // }
 }
 
-var worker = new Worker('worker.js');
+var worker = new Worker('cryptonight-worker.js');
 
 const api = new Api('localhost', 8089, (json)=>{
   switch(json.method) {

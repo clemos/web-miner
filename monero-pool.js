@@ -52,7 +52,7 @@ class MoneroPool extends EventEmitter {
   }
 
   request(method, params) {
-    //console.log('request',method,params);
+    console.log('request',method,params);
     return new Promise((resolve, reject)=>{
       var reqId = this.getRequestId();
       var req = {
@@ -111,7 +111,7 @@ class MoneroPool extends EventEmitter {
   }
 
   submit(work){
-    console.log('** submitting', work);
+    console.log('** submitting **');
     return this.request('submit', {
       id: this.clientId,
       job_id: work.job_id,
