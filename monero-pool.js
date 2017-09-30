@@ -15,11 +15,17 @@ class MoneroPool extends EventEmitter {
     this.config = config;
     
     var client = this.client = new Socket();
+    client.setTimeout(300*1000); // 300 seconds, like cpu-miner FIXME: set in config?
     client.on('data', (data)=>this.onData(data));
     client.on('json', (json)=>this.onJson(json));
-    client.on('close', ()=>this.onClose());
+    client.on('close', ()=>{
+      console.log('socket closed');
+    });
     client.on('timeout', ()=>{
       console.log('socket timed out');
+      console.log('reconnecting...');
+      this.client.destroy();
+      this.connect();
     });
     client.on('end', ()=>{
       console.log('socket ended');
@@ -51,10 +57,6 @@ class MoneroPool extends EventEmitter {
           break;
       }
     }
-  }
-
-  onClose() {
-    console.log('connection to pool closed');
   }
 
   request(method, params) {
@@ -134,12 +136,9 @@ class MoneroPool extends EventEmitter {
     });
   }
 
-  connect(cb) {
+  connect() {
     console.log('connecting to pool', this.config.pool);
     return this.client.connect(this.config.pool.port, this.config.pool.host, ()=>{
-      // FIXME: should be able to reconnect
-      console.log('monero pool connected !');
-      if( cb ) cb();
       this.onConnect();
     });
   }
