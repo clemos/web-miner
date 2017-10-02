@@ -29,6 +29,27 @@ class Api {
   // }
 }
 
+
+var prevStatTime;
+var nonces = 0;
+var totalHashes = 0;
+var $nonces = document.getElementById("nonces");
+var $hashes = document.getElementById("hashes");
+var $hashrate = document.getElementById("hashrate");
+function updateView(stats) {
+  $nonces.textContent = nonces;
+  if( stats ) {
+    totalHashes += stats.hashes;
+    $hashes.textContent = totalHashes;
+    if( prevStatTime ) {
+      var now = performance.now();
+      var delta = now-prevStatTime;
+      var hashrate = 1000 * stats.hashes / delta;
+      $hashrate.textContent = hashrate;
+    }
+  }
+}
+
 var worker = new Worker('cryptonight-worker.js');
 
 const api = new Api('localhost', 8089, (json)=>{
@@ -47,9 +68,15 @@ worker.onmessage = function(e){
   console.log('got message from worker', e);
   switch(e.data.method) {
     case "submit": 
-      console.log('submitting work',e.data.params);
       api.submit(e.data.params);
+      nonces++;
+      updateView();
       break;
+    case "stats":
+      updateView(e.data.params);
+      prevStatTime = performance.now();
+      break;
+      
   }
 }
 

@@ -52,17 +52,8 @@ function prepare(){
 }
 
 function work() {
-  console.log('nonce', nonce.getUint32(0,true));
-
-  var t0 = performance.now();
   var found = Module._do_scan(N_HASHES);
-  var t1 = performance.now();
-  var delta = (t1-t0);
-  
   var hashes_done = Module._get_hashes_done();
-  
-  console.log('hashes done', hashes_done);
-  console.log('hashrate', (1000*hashes_done/delta) );
   
   if( found ) {
     submitWork();
@@ -71,11 +62,17 @@ function work() {
   if( working ){
     setTimeout(work,0);
   }
+
+  postMessage({
+    method: "stats",
+    params: {
+      hashes: hashes_done
+    }
+  });
 }
 
 function submitWork() {
-  console.log("*** FOUND ***");
-    
+
   var hash_ptr = Module._update_current_hash();
   var hash = new Uint8Array(Module.HEAPU8.buffer, hash_ptr, HASH_LENGTH);
 

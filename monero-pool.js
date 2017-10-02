@@ -142,6 +142,10 @@ class MoneroPool extends EventEmitter {
       this.onConnect();
     });
   }
+
+  destroy() {
+    return this.client.destroy();
+  }
 }
 
 module.exports = MoneroPool;

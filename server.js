@@ -13,7 +13,7 @@ const config = {
   },
   monero: {
     pool: {
-      host: 'mine.moneropool.com', 
+      host: 'localhost', 
       port: 3333
     },
     // WALLET FROM CPUMINER DEV ;)
@@ -37,18 +37,13 @@ function sendJob(client, job) {
 
 const wsServer = new ws.Server({port: config.ws.port});
 
-const pool = new MoneroPool( config.monero );
-pool.on('job', (job)=>{
-  wsServer.clients.forEach((client)=>{
-    if (client.readyState === ws.OPEN) {
-      sendJob(client, job);
-    }
-  });
-});
-
-pool.connect();
-
 wsServer.on('connection', (client)=>{
+  var pool = new MoneroPool(config.monero);
+  pool.on('job', (job)=>{
+    sendJob(client, job);
+  });
+
+  pool.connect();
   client.on('message', (message)=>{
     try {
       var json = JSON.parse(message);
@@ -64,10 +59,12 @@ wsServer.on('connection', (client)=>{
       console.error('invalid message from client',message,e);
     }
   });
-  var job;
-  if(job = pool.getJob()) {
-    sendJob(client, job);  
-  }
+
+  client.on('close',()=>{
+    console.log('ws: connection closed');
+    pool.destroy();
+  });
+
 }); 
 
 
