@@ -21,6 +21,11 @@ void work_set_target_ratio(struct work* work, uint32_t* hash)
 extern "C" {
 #endif
 
+int main() {
+  work_restart = (struct work_restart*) calloc(opt_n_threads, sizeof(*work_restart));
+  hashes_done = malloc(8);
+}
+
 // return the current blob pointer
 uint32_t* EMSCRIPTEN_KEEPALIVE get_blob_ptr() {
   return work.data;
@@ -38,15 +43,7 @@ uint64_t EMSCRIPTEN_KEEPALIVE get_hashes_done() {
 
 // computes at most "max_hashes", and returns 1 if a valid nonce is found
 int EMSCRIPTEN_KEEPALIVE do_scan(uint32_t max_hashes) {
-
-  if(!work_restart) {
-    work_restart = (struct work_restart*) calloc(opt_n_threads, sizeof(*work_restart));
-  }
-
-  if(!hashes_done) {
-    hashes_done = malloc(8);
-  }
-
+  
   uint32_t max_nonce = *nonceptr + max_hashes - 2;
   // run scan 
   *hashes_done = 0;

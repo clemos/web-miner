@@ -127,7 +127,7 @@ function init(){
     }
     work();
   }catch(e){
-    console.log('failed',e);
+    console.log('waiting for init...');
     setTimeout(init, 1);
   }
 }
